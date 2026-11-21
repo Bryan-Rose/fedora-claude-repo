@@ -2,20 +2,20 @@
 
 ## 1. Confirm inputs
 
-- [ ] 1.1 Confirm the APT base URL and the Anthropic signing key's URL and fingerprint from Anthropic's Linux install docs (not from upstream's code). Verify with `gpgv --keyring` that `dists/stable/InRelease` checks out against that key.
-- [ ] 1.2 Commit the key as `keys/anthropic-apt.gpg`, with its fingerprint and source URL in `keys/README.md`. Verify that `gpg --show-keys keys/anthropic-apt.gpg` prints the documented fingerprint.
-- [ ] 1.3 Audit upstream at its latest tag: `build.sh`, `scripts/` (patches, launcher, doctor, `packaging/rpm.sh`, setup). Write `docs/upstream-audit.md` covering network access, writes outside the build directory, and app changes beyond the documented patches. Verify the doc names the reviewed tag and SHA.
-- [ ] 1.4 Create `upstream.env` with `UPSTREAM_REPO`, `UPSTREAM_TAG` and `UPSTREAM_REF` from the audit. Verify that `git ls-remote` shows the tag resolves to the SHA.
+- [x] 1.1 Confirm the APT base URL and the Anthropic signing key's URL and fingerprint from Anthropic's Linux install docs (not from upstream's code). Verify with `gpgv --keyring` that `dists/stable/InRelease` checks out against that key.
+- [x] 1.2 Commit the key as `keys/anthropic-apt.gpg`, with its fingerprint and source URL in `keys/README.md`. Verify that `gpg --show-keys keys/anthropic-apt.gpg` prints the documented fingerprint.
+- [x] 1.3 Audit upstream at its latest tag: `build.sh`, `scripts/` (patches, launcher, doctor, `packaging/rpm.sh`, setup). Write `docs/upstream-audit.md` covering network access, writes outside the build directory, and app changes beyond the documented patches. Verify the doc names the reviewed tag and SHA.
+- [x] 1.4 Create `upstream.env` with `UPSTREAM_REPO`, `UPSTREAM_TAG` and `UPSTREAM_REF` from the audit. Verify that `git ls-remote` shows the tag resolves to the SHA.
 
 ## 2. Signing key and secrets
 
-- [ ] 2.1 Generate a dedicated RSA-4096 signing key with no passphrase, named for this repo, on the desktop. Store it as the Actions secrets `RPM_GPG_PRIVATE_KEY` and `RPM_GPG_NAME`, then delete the local private key. Verify that `gh secret list` shows both secrets.
-- [ ] 2.2 Document key rotation and revocation in `docs/signing.md`. Verify the doc lists the secret names and the steps for re-importing the key on the desktop.
+- [x] 2.1 Generate a dedicated RSA-4096 signing key with no passphrase, named for this repo, on the desktop. Store it as the Actions secrets `RPM_GPG_PRIVATE_KEY` and `RPM_GPG_NAME`, then delete the local private key. Verify that `gh secret list` shows both secrets.
+- [x] 2.2 Document key rotation and revocation in `docs/signing.md`. Verify the doc lists the secret names and the steps for re-importing the key on the desktop.
 
 ## 3. Companion package
 
-- [ ] 3.1 Record the current `.deb` Depends and Recommends lines in `packaging/deb-deps.txt`. Verify the file matches the control fields of the newest `.deb`.
-- [ ] 3.2 Write `packaging/claude-desktop-fedora.spec` (noarch), mapping the Depends to `Requires` and the Recommends to `Recommends`, with alternatives as rich dependencies. Verify that `rpmbuild -bb` in a `fedora:44` container produces the package.
+- [x] 3.1 Record the current `.deb` Depends and Recommends lines in `packaging/deb-deps.txt`. Verify the file matches the control fields of the newest `.deb`.
+- [x] 3.2 Write `packaging/claude-desktop-fedora.spec` (noarch), mapping the Depends to `Requires` and the Recommends to `Recommends`, with alternatives as rich dependencies. Verify that `rpmbuild -bb` in a `fedora:44` container produces the package.
 
 ## 4. Build workflow
 

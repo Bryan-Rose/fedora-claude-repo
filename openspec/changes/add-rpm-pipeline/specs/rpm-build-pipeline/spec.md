@@ -50,6 +50,17 @@ The pipeline SHALL build with the upstream tooling checked out at the pinned com
 - **WHEN** the pinned upstream tag points at a different commit than the pinned SHA
 - **THEN** the pipeline stops without building and reports the mismatch
 
+### Requirement: Reviewed patch skips
+The pipeline SHALL omit an upstream patch only if that patch is named in the committed skip list alongside the pin. It SHALL fail the build if a listed name is not one of upstream's active patches at the pinned commit. Upstream code SHALL NOT be modified in any other way.
+
+#### Scenario: Listed patch skipped
+- **WHEN** the skip list names an active upstream patch
+- **THEN** the build runs every other active patch and omits that one
+
+#### Scenario: Stale skip entry
+- **WHEN** the skip list names a patch that is not active at the pinned commit
+- **THEN** the build stops without building and reports the unknown name
+
 ### Requirement: Upgradeable package versions
 The produced `claude-desktop-unofficial` RPM SHALL carry a version-release that is higher than before whenever either the `.deb` version or the pinned upstream release increases, so `dnf upgrade` installs it.
 

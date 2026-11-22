@@ -36,6 +36,16 @@ git checkout --quiet --detach "$UPSTREAM_REF"
 tag_sha=$(git rev-parse "refs/tags/$UPSTREAM_TAG^{commit}")
 [[ $tag_sha == "$UPSTREAM_REF" ]] \
 	|| { echo "Tag $UPSTREAM_TAG -> $tag_sha, expected pinned $UPSTREAM_REF" >&2; exit 1; }
+# Reviewed skip list (design D13): drop named entries from active_patches,
+# failing on any name that isn't an entry. Local checkout only.
+f=scripts/patches/app-asar.sh
+for p in ${UPSTREAM_SKIP_PATCHES:-}; do
+	[[ $p =~ ^[a-z_]+$ ]] || { echo "UPSTREAM_SKIP_PATCHES: bad name '$p'" >&2; exit 1; }
+	sed -n '/^active_patches=(/,/^)/p' "$f" | grep -qxP "\s*\Q$p\E" \
+		|| { echo "UPSTREAM_SKIP_PATCHES: '$p' is not in active_patches at $UPSTREAM_REF" >&2; exit 1; }
+	sed -i "/^active_patches=(/,/^)/{/^[[:space:]]*${p}[[:space:]]*\$/d}" "$f"
+	echo "Skipping upstream patch: $p"
+done
 echo "::endgroup::"
 
 echo "::group::build.sh"

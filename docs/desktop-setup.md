@@ -1,0 +1,50 @@
+# Desktop setup (Fedora, x86_64)
+
+> Don't install Anthropic's official `claude-desktop` alongside this package. Both use `~/.config/Claude`, so run only one of them at a time.
+
+## 1. Add the repository
+
+```bash
+sudo tee /etc/yum.repos.d/claude-desktop.repo >/dev/null <<'EOF'
+[claude-desktop-local]
+name=Claude Desktop (self-built, unofficial)
+baseurl=https://bryan-rose.github.io/fedora-claude-repo/rpm
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://bryan-rose.github.io/fedora-claude-repo/RPM-GPG-KEY
+EOF
+```
+
+## 2. Import and check the signing key
+
+```bash
+sudo rpm --import https://bryan-rose.github.io/fedora-claude-repo/RPM-GPG-KEY
+curl -fsSL https://bryan-rose.github.io/fedora-claude-repo/RPM-GPG-KEY | gpg --show-keys
+```
+
+The fingerprint must be `7383AC1F9C19B3D4F33791D407E09944D89204D2` (see `docs/signing.md`), and it must be the **only** key listed.
+
+## 3. Install
+
+```bash
+sudo dnf install claude-desktop-fedora
+```
+
+This pulls in `claude-desktop-unofficial` plus its runtime dependencies, including Cowork's recommended packages (bubblewrap, qemu-system-x86, edk2-ovmf, virtiofsd). Updates then arrive through `sudo dnf upgrade`.
+
+## 4. Check
+
+```bash
+claude-desktop-unofficial --doctor
+rpm -q nodejs    # should print "package nodejs is not installed"
+```
+
+## Removing
+
+```bash
+sudo dnf remove claude-desktop-fedora claude-desktop-unofficial
+sudo rm /etc/yum.repos.d/claude-desktop.repo
+```
+
+Your data in `~/.config/Claude` and the launcher's cache in `~/.cache/claude-desktop-debian` are left in place.

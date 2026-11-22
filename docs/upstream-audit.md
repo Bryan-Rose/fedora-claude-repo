@@ -45,3 +45,7 @@ Found: the launcher's config-backup, desktop-entry repair, and process-cleanup b
 ## Verdict
 
 Acceptable to pin. Bump the pin only after reviewing `git diff <old>..<new> -- build.sh scripts/` (see `docs/pin-bump.md`).
+
+## Skipped patches at this pin
+
+- `patch_tray_icon_env_override`: its anchor (the `TrayIconLinux` ternary) is missing in `.deb` 6.28899.2, so the build fails. Upstream CI fails on the same commit. Skipping it only disables the `CLAUDE_TRAY_USE_DARK_ICON` override, which the launcher sets automatically only on Cinnamon. On KDE you get Anthropic's default tray-icon selection. Clear the skip when a pin bump brings a working patch. See design D13.

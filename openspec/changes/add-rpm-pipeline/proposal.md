@@ -32,4 +32,4 @@ None. There are no existing specs.
 - GitHub: the `gh-pages` branch content, Actions secrets `RPM_GPG_PRIVATE_KEY` and `RPM_GPG_NAME`, and issues opened by the workflows.
 - Desktop: `/etc/yum.repos.d/claude-desktop.repo`, the imported public key, and the `claude-desktop-fedora` and `claude-desktop-unofficial` packages. No Node.js.
 - External, read-only: Anthropic's APT repo (`downloads.claude.ai`) and `aaddrick/claude-desktop-debian`. We never send changes upstream.
-- Out of scope: arm64, COPR, Flatpak/AppImage, and editing upstream code.
+- Out of scope: arm64, COPR, Flatpak/AppImage, and editing upstream code (other than the reviewed patch skip list, design D13).

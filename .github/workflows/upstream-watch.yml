@@ -1,0 +1,33 @@
+name: upstream-watch
+# Daily: one rolling issue when upstream build-relevant code moves past the pin.
+# Never changes the pin or the repo (upstream-watch spec). No secrets.
+on:
+  schedule:
+    - cron: "41 9 * * *"
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Compare pin with upstream main
+        run: |
+          ci/watch.sh > body.md
+          if [ -s body.md ]; then
+            cat body.md >> "$GITHUB_STEP_SUMMARY"
+            ci/issue.sh open upstream-review "Upstream changes to review since pin" body.md
+          else
+            echo "No build-relevant upstream changes since the pin." >> "$GITHUB_STEP_SUMMARY"
+            ci/issue.sh close upstream-review "Pin is caught up with upstream main."
+          fi

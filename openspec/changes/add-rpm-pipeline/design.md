@@ -27,7 +27,7 @@ The build feeds the newest verified `.deb` to upstream at the pin via `--deb`.
 - *Rejected: build whatever upstream's pinned `.deb` is.* That needs a review for every app release (about three a week).
 - *Rejected: repackage without upstream.* Cowork needs the sandbox and VM patches.
 - *Rejected: vendor the patches.* Same review effort, but we'd own a build harness around them.
-- Trade-off: reviewed patches run against newer app versions than upstream tested. Because no-op patches fail the build, the failure mode is a red build, not a silently broken package.
+- Trade-off: reviewed patches run against newer app versions than upstream tested. Because no-op patches fail the build, the failure mode is a red build, not a silently broken package. D13 is the escape hatch when a non-essential patch breaks.
 
 ### D2. Verify like apt does, with an isolated keyring
 `gpgv --keyring ./keys/anthropic-apt.gpg InRelease` → `sha256sum` of `Packages` against InRelease → `sha256sum` of the `.deb` against the Packages entry. Anthropic's key is committed to the repo (its fingerprint confirmed from Anthropic's docs) and is never imported into the signing keyring. This keeps it out of the exported `RPM-GPG-KEY`.
@@ -48,7 +48,7 @@ A noarch spec in this repo (`packaging/claude-desktop-fedora.spec`). It requires
 A dedicated RSA-4096 signing key, with no passphrase, generated on the desktop and stored only in Actions secrets `RPM_GPG_PRIVATE_KEY` and `RPM_GPG_NAME`, then deleted locally. Without a passphrase, no loopback-pinentry setup is needed in CI; anyone who could read one secret could read a passphrase secret too. `rpmsign --addsign` uses `%_gpg_name`. `repomd.xml` is detach-signed with `--armor`. The key is exported as `gpg --armor --export "$RPM_GPG_NAME"`.
 
 ### D8. Two workflows
-- `build.yml`: daily cron plus `workflow_dispatch`. Stages run in order: discover → skip check → fetch → build → test matrix → publish. Publishing does retention (three newest per package name), `createrepo_c --update`, signing `repomd.xml`, and writing `LAST_VERSION`, all in one gh-pages commit.
+- `build.yml`: daily cron plus `workflow_dispatch` (with a `force` input that bypasses the skip check, for key rotation and edits that don't change the build key, such as the companion spec or skip list). Stages run in order: discover → skip check → fetch → build → test matrix → publish. Publishing does retention (three newest per package name), `createrepo_c --update`, signing `repomd.xml`, and writing `LAST_VERSION`, all in one gh-pages commit.
 - `upstream-watch.yml`: daily cron plus `workflow_dispatch`. It does a treeless clone of upstream and runs `git diff --quiet -I'^OFFICIAL_DEB_' "$UPSTREAM_REF" origin/main -- build.sh scripts/ ':!*.md'`. It then creates, updates, or closes the single labelled issue with `gh`.
 
 Both workflows read the pin from one place (`upstream.env` in the repo) so a bump is a one-file commit.
@@ -77,6 +77,12 @@ A compromised build input can then produce a bad unsigned RPM, but cannot read t
 - Only GitHub-owned actions are allowed, pinned by full commit SHA (enforced in repo settings since 2026-11-21).
 - Rolling-issue lookup matches label **and** author `github-actions[bot]`, so an issue a stranger opens can't take the place of ours.
 - Wiki and Projects are disabled; the repo description and README carry an "unofficial, not affiliated with Anthropic" disclaimer. The packages are publicly installable by design.
+
+### D13. Per-pin patch skip list
+`upstream.env` may set `UPSTREAM_SKIP_PATCHES` to a space-separated list of upstream patch function names. Before running `build.sh`, the build removes exactly those entries from `active_patches` in `scripts/patches/app-asar.sh` **in the local checkout only**. If a listed name is not currently an entry, the build fails, so a stale or mistyped skip can't pass silently. The skip list is reviewed and committed together with the pin, and cleared when a pin bump brings upstream's fix. This is the stopgap upstream's own error message recommends. It is the only local edit to upstream code we allow, and nothing is ever sent upstream.
+- First use (2026-11-21): `patch_tray_icon_env_override` fails on `.deb` 6.28899.2; upstream's own CI is red on the same commit. It only makes `CLAUDE_TRAY_USE_DARK_ICON` work (Cinnamon dark panels); on KDE the result is Anthropic's default tray-icon selection.
+- *Rejected: wait for upstream.* No package for an unknown number of days.
+- *Rejected: pin an older tag and build its `.deb`.* That contradicts D1.
 
 ## Risks / Trade-offs
 

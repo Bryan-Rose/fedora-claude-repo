@@ -1,0 +1,209 @@
+name: build
+# Daily: newest verified Anthropic .deb + reviewed upstream pin -> signed dnf repo.
+# Triggers stay schedule/dispatch only. Never add pull_request_target (design D12).
+on:
+  schedule:
+    - cron: "17 9 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild and republish even if nothing changed (e.g. after key rotation or a companion-package edit)
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: build
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    container: registry.fedoraproject.org/fedora:44
+    permissions:
+      contents: read
+    outputs:
+      deb_version: ${{ steps.d.outputs.deb_version }}
+      deb_filename: ${{ steps.d.outputs.deb_filename }}
+      deb_sha256: ${{ steps.d.outputs.deb_sha256 }}
+      key: ${{ steps.d.outputs.key }}
+      skip: ${{ steps.d.outputs.skip }}
+    steps:
+      - name: Install tools
+        run: |
+          dnf -y -q install git curl gnupg2
+          git config --global --add safe.directory '*'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Find newest verified .deb and compare with last publish
+        id: d
+        env:
+          FORCE: ${{ inputs.force }}
+        run: |
+          ci/discover.sh > discovered.env
+          cat discovered.env | tee -a "$GITHUB_OUTPUT"
+          source discovered.env
+          source upstream.env
+          key="${deb_version}+${UPSTREAM_REF}"
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+          git fetch -q --depth=1 origin gh-pages
+          last=$(git show FETCH_HEAD:LAST_VERSION 2>/dev/null || true)
+          echo "last=$last key=$key force=${FORCE:-false}"
+          if [ "$last" = "$key" ] && [ "${FORCE:-false}" != "true" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Up to date ($key); nothing to build." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  build:
+    needs: discover
+    if: needs.discover.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    container: registry.fedoraproject.org/fedora:44
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    outputs:
+      drift: ${{ steps.b.outputs.drift }}
+    steps:
+      - name: Install tools
+        run: |
+          dnf -y -q install git curl rpm-build binutils tar xz zstd wget nodejs npm diffutils findutils
+          git config --global --add safe.directory '*'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build RPMs (no secrets in this job)
+        id: b
+        env:
+          deb_filename: ${{ needs.discover.outputs.deb_filename }}
+          deb_sha256: ${{ needs.discover.outputs.deb_sha256 }}
+        run: |
+          ci/build.sh
+          if [ -f out/deps-drift.diff ]; then echo "drift=true" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rpms
+          path: out/*.rpm
+          if-no-files-found: error
+          retention-days: 7
+      - if: steps.b.outputs.drift == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: deps-drift
+          path: out/deps-drift.diff
+          retention-days: 7
+
+  test:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        fedora: ["44", "45"]
+    runs-on: ubuntu-latest
+    container: registry.fedoraproject.org/fedora:${{ matrix.fedora }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: rpms
+          path: out
+      - name: Install test on Fedora ${{ matrix.fedora }}
+        run: ci/install-test.sh out
+
+  publish:
+    needs: [discover, test]
+    runs-on: ubuntu-latest
+    container: registry.fedoraproject.org/fedora:44
+    permissions:
+      contents: write
+    steps:
+      - name: Install tools
+        run: |
+          dnf -y -q install git rpm-sign createrepo_c gnupg2 findutils
+          git config --global --add safe.directory '*'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: repo
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: gh-pages
+          path: site
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: rpms
+          path: dist
+      - name: Sign and regenerate repository (only job with the signing key)
+        env:
+          RPM_GPG_PRIVATE_KEY: ${{ secrets.RPM_GPG_PRIVATE_KEY }}
+          RPM_GPG_NAME: ${{ secrets.RPM_GPG_NAME }}
+          KEY: ${{ needs.discover.outputs.key }}
+        run: repo/ci/publish.sh site dist "$KEY"
+      - name: Push gh-pages (single commit)
+        env:
+          KEY: ${{ needs.discover.outputs.key }}
+        run: |
+          cd site
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "claude-desktop $KEY"
+          git push -q origin HEAD:gh-pages
+          echo "Published $KEY" >> "$GITHUB_STEP_SUMMARY"
+
+  report:
+    needs: [discover, build, test, publish]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build failure issue
+        env:
+          R_DISCOVER: ${{ needs.discover.result }}
+          R_BUILD: ${{ needs.build.result }}
+          R_TEST: ${{ needs.test.result }}
+          R_PUBLISH: ${{ needs.publish.result }}
+          KEY: ${{ needs.discover.outputs.key }}
+        run: |
+          failed=""
+          for s in discover build test publish; do
+            v="R_${s^^}"
+            if [ "${!v}" = failure ]; then failed="$failed $s"; fi
+          done
+          if [ -n "$failed" ]; then
+            # shellcheck disable=SC2016 # backticks are Markdown
+            printf 'The daily build failed. Nothing was published; the repository still serves the last good build.\n\n- Failed stage(s):%s\n- Build key: `%s`\n- Run: %s\n\nIf an upstream patch no longer applies, check the `upstream-review` issue for a fix to review, or see design D13 for the skip list.\n' \
+              "$failed" "${KEY:-unknown}" "$RUN_URL" > body.md
+            ci/issue.sh open build-failure "Build failing:$failed" body.md
+          elif [ "$R_PUBLISH" = success ]; then
+            ci/issue.sh close build-failure "Fixed: published \`$KEY\` in $RUN_URL"
+          fi
+      - if: needs.build.outputs.drift == 'true'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: deps-drift
+          path: drift
+      - name: Dependency drift issue
+        if: needs.build.outputs.drift == 'true'
+        env:
+          V: ${{ needs.discover.outputs.deb_version }}
+        run: |
+          # shellcheck disable=SC2016 # backticks are Markdown
+          { printf 'The official .deb %s declares different dependencies than `packaging/deb-deps.txt`. The build was not blocked.\n\nUpdate `packaging/claude-desktop-fedora.spec` (bump Version) and `packaging/deb-deps.txt`, then run the build with **force**.\n\n```diff\n' "$V"
+            cat drift/deps-drift.diff; printf '```\n\nRun: %s\n' "$RUN_URL"; } > body.md
+          ci/issue.sh open deps-drift "Official .deb dependencies changed ($V)" body.md

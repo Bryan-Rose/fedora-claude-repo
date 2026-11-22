@@ -6,6 +6,7 @@
 - [x] 1.2 Commit the key as `keys/anthropic-apt.gpg`, with its fingerprint and source URL in `keys/README.md`. Verify that `gpg --show-keys keys/anthropic-apt.gpg` prints the documented fingerprint.
 - [x] 1.3 Audit upstream at its latest tag: `build.sh`, `scripts/` (patches, launcher, doctor, `packaging/rpm.sh`, setup). Write `docs/upstream-audit.md` covering network access, writes outside the build directory, and app changes beyond the documented patches. Verify the doc names the reviewed tag and SHA.
 - [x] 1.4 Create `upstream.env` with `UPSTREAM_REPO`, `UPSTREAM_TAG` and `UPSTREAM_REF` from the audit. Verify that `git ls-remote` shows the tag resolves to the SHA.
+- [x] 1.5 Add `UPSTREAM_SKIP_PATCHES=patch_tray_icon_env_override` to `upstream.env` with a comment giving the reason and the clear-when condition. Verify `docs/upstream-audit.md` records the skip.
 
 ## 2. Signing key and secrets
 
@@ -19,10 +20,10 @@
 
 ## 4. Build workflow
 
-- [ ] 4.0 Lay out `build.yml` jobs per design D11/D12: top-level `permissions: {}`, `schedule` + `workflow_dispatch` triggers only, GitHub-owned actions pinned by SHA, signing secrets referenced only in the `publish` job. Verify `grep -n 'secrets\.' .github/workflows/build.yml` hits only the publish job and the workflow has no `pull_request*` trigger.
+- [x] 4.0 Lay out `build.yml` jobs per design D11/D12: top-level `permissions: {}`, `schedule` + `workflow_dispatch` triggers only, GitHub-owned actions pinned by SHA, signing secrets referenced only in the `publish` job. Verify `grep -n 'secrets\.' .github/workflows/build.yml` hits only the publish job and the workflow has no `pull_request*` trigger.
 - [ ] 4.1 Add `.github/workflows/build.yml` with the discovery stage: verify InRelease, check the Packages hash, and select the highest version. Verify that a `workflow_dispatch` run logs the same version as the top `sort -V` entry.
 - [ ] 4.2 Add the skip check against `LAST_VERSION` (`<deb version>+<UPSTREAM_REF>`). Verify by temporarily writing the expected key to gh-pages and confirming the run exits early.
-- [ ] 4.3 Add the fetch and build stages: check the `.deb` hash, check that the tag matches the SHA, run `build.sh --build rpm --clean yes --deb <file> --release-tag $UPSTREAM_TAG`, build the companion package, and run the dependency-drift diff. Verify that the run's artifacts contain both RPMs and that `rpm -qp --qf '%{VERSION}-%{RELEASE}'` shows the deb version and wrapper release.
+- [ ] 4.3 Add the fetch and build stages: check the `.deb` hash, check that the tag matches the SHA, apply `UPSTREAM_SKIP_PATCHES` (design D13; fail on an unknown name), run `build.sh --build rpm --clean yes --deb <file> --release-tag $UPSTREAM_TAG`, build the companion package, and run the dependency-drift diff. Verify that the run's artifacts contain both RPMs and that `rpm -qp --qf '%{VERSION}-%{RELEASE}'` shows the deb version and wrapper release.
 - [ ] 4.4 Add an install-test matrix (`fedora:44`, `fedora:45`) running `dnf install ./*.rpm` and `rpm -V`. Verify both jobs pass, and that a deliberately wrong dependency name makes them fail.
 - [ ] 4.5 Add the publish stage, gated on the tests: sign the RPMs, keep the three newest per package name, run `createrepo_c --update`, write the armored `repomd.xml.asc`, export `RPM-GPG-KEY` by name, write `LAST_VERSION`, and push one gh-pages commit. Verify `rpm -K` on the published RPMs, `gpg --verify` on `repomd.xml.asc`, and that `RPM-GPG-KEY` contains exactly one key.
 - [ ] 4.6 Add failure and drift reporting: one rolling issue per label (`build-failure`, `deps-drift`), matched by label and author `github-actions[bot]`, with the stage and a run link. Verify by forcing a failure, for example with a bad `.deb` hash: an issue opens, gh-pages is unchanged, and a second failure updates the same issue.
@@ -30,8 +31,8 @@
 ## 5. Upstream watch workflow
 
 - [ ] 5.1 Add `.github/workflows/upstream-watch.yml` running `git diff -I'^OFFICIAL_DEB_'` from `UPSTREAM_REF` to upstream `main` over `build.sh` and `scripts/`, excluding Markdown, and maintaining one `upstream-review` issue (matched by label and bot author) with a compare link, using `permissions: {contents: read, issues: write}` and no secrets. Verify that a run with an old pin opens the issue and a run with the pin at `main` closes it.
-- [ ] 5.2 Check the filter against upstream's recent "Update Claude Desktop to version …" commits. Verify that a diff spanning only such commits reports no change.
-- [ ] 5.3 Document the review-and-bump procedure in `docs/pin-bump.md`. Verify it covers reading the compare link, updating `upstream.env`, and the rebuild that follows.
+- [x] 5.2 Check the filter against upstream's recent "Update Claude Desktop to version …" commits. Verify that a diff spanning only such commits reports no change.
+- [x] 5.3 Document the review-and-bump procedure in `docs/pin-bump.md`. Verify it covers reading the compare link, updating `upstream.env`, reviewing and clearing `UPSTREAM_SKIP_PATCHES`, and the rebuild that follows.
 
 ## 6. Desktop setup
 

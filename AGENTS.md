@@ -1,3 +1,22 @@
+# fedora-claude-repo
+
+Builds Claude Desktop RPMs for Fedora from Anthropic's official `.deb`, signs them, and publishes a dnf repository on GitHub Pages. Requirements are in `openspec/specs/`; the original design (decisions D1 to D12) is in `openspec/changes/archive/2026-11-22-add-rpm-pipeline/design.md`.
+
+## Commands
+
+- `make check`: shellcheck, actionlint and the offline tests in `tests/`. Same as the CI job `check`. Needs `ShellCheck` and `golang` (`sudo dnf install ShellCheck golang`).
+- The real build (`build.yml`) is not part of `make check`: it takes up to an hour and needs the network. Start it with `gh workflow run build.yml -f force=true` only when the maintainer asks.
+
+## Rules for this repo
+
+- **Never add `pull_request_target`** (design D12). PR-triggered jobs get no secrets except the review workflow's API key.
+- **Only the `publish` job gets the signing key**, through the main-only `release` environment, and it runs no upstream code (D11). Never add the signing secrets at repo level or to another job. See `docs/signing.md`.
+- **Actions:** only GitHub-owned actions plus `anthropics/claude-code-action` and agent-kit's review workflow are allowed, all pinned by full commit SHA with a version comment.
+- **Pin bumps** of the upstream tooling (`upstream.env`) follow `docs/pin-bump.md` and are reviewed by hand.
+- **Never open PRs or issues on `aaddrick/claude-desktop-debian`.** Solve gaps here.
+- **Bot-owned issues** (labels `build-failure`, `deps-drift`, `upstream-review`) are opened, updated and closed by `ci/issue.sh`. Don't edit or close them by hand.
+- **Add the `review:deep` label** to any PR that touches `.github/workflows/`, `ci/publish.sh`, `keys/` or `upstream.env`.
+
 <!-- agent-kit:begin -->
 <!-- Shared block from Bryan-Rose/agent-kit (templates/agents-workflow.md). Change it there, not here. -->
 

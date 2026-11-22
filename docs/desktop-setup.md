@@ -37,7 +37,8 @@ This pulls in `claude-desktop-unofficial` plus its runtime dependencies, includi
 
 ```bash
 claude-desktop-unofficial --doctor
-rpm -q nodejs    # should print "package nodejs is not installed"
+rpm -q --whatprovides /usr/bin/node    # "no package provides" = no Node.js. CI checks that these packages never pull it in;
+                                       # a package listed here came from something else you installed.
 ```
 
 ## Removing

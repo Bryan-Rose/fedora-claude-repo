@@ -36,8 +36,8 @@
 
 ## 6. Desktop setup
 
-- [ ] 6.1 Write `docs/desktop-setup.md` covering `/etc/yum.repos.d/claude-desktop.repo` (`gpgcheck=1`, `repo_gpgcheck=1`), the key import, `sudo dnf install claude-desktop-fedora`, and the shared-`~/.config/Claude` warning. Verify each command in it runs as written on the desktop.
-- [ ] 6.2 Install on the desktop and run `claude-desktop-unofficial --doctor`. Verify that it reports no blocking issues, that Cowork's runtime packages are installed, and that `rpm -q nodejs` reports not installed.
+- [x] 6.1 Write `docs/desktop-setup.md` covering `/etc/yum.repos.d/claude-desktop.repo` (`gpgcheck=1`, `repo_gpgcheck=1`), the key import, `sudo dnf install claude-desktop-fedora`, and the shared-`~/.config/Claude` warning. Verify each command in it runs as written on the desktop.
+- [x] 6.2 Install on the desktop and run `claude-desktop-unofficial --doctor`. Verify that it reports no blocking issues, that Cowork's runtime packages are installed, and that no package provides `/usr/bin/node` because of these packages (CI: `rpm -q --whatprovides /usr/bin/node`; Fedora names Node `nodejs24` etc., so `rpm -q nodejs` proves nothing).
 
 ## 7. Integration checks
 

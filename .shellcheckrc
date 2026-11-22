@@ -1,0 +1,2 @@
+# upstream.env is plain assignments; nothing to follow.
+disable=SC1091

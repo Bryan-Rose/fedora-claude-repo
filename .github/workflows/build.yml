@@ -124,6 +124,7 @@ jobs:
   publish:
     needs: [discover, test]
     runs-on: ubuntu-latest
+    environment: release # signing secrets live only here; deployments limited to main (D11)
     container: registry.fedoraproject.org/fedora:44
     permissions:
       contents: write

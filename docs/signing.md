@@ -1,25 +1,25 @@
 # Repository signing key
 
 - **UID:** `fedora-claude-repo RPM signing key` (no email, because the public key is published)
-- **Fingerprint:** `7383AC1F9C19B3D4F33791D407E09944D89204D2`
+- **Fingerprint:** `5DAB838BDB269D9E0A1F5F63BB2FAD090BCEB63D`
 - **Type:** RSA-4096, signing only, no expiry, no passphrase (design D7)
-- **Created:** 2026-11-21
+- **Created:** 2026-11-22 (rotated from `7383AC1F9C19B3D4F33791D407E09944D89204D2`, created 2026-11-21, when the secrets moved to the `release` environment)
 
 ## Where it lives
 
 | Item | Location |
 |---|---|
-| Private key (armored) | Actions secret `RPM_GPG_PRIVATE_KEY`, and nowhere else. The local copy was deleted after upload. |
-| Key name for `%_gpg_name` | Actions secret `RPM_GPG_NAME` (the UID above) |
+| Private key (armored) | `release` environment secret `RPM_GPG_PRIVATE_KEY`, plus an offline backup kept by the owner outside the repo |
+| Key name for `%_gpg_name` | `release` environment secret `RPM_GPG_NAME` (the UID above) |
 | Public key | `RPM-GPG-KEY` on the Pages site, exported by name, containing only this key |
 | Revocation certificate | Offline, kept by the owner outside the repo. Never commit it. |
 
-Only the workflow's `publish` job reads these secrets (design D11).
+Only the workflow's `publish` job reads these secrets (design D11). It runs in the `release` environment, whose deployments are limited to `main`, so a workflow on any other branch gets empty values. Never add them as repo-level secrets.
 
 ## Rotating the key (planned, or if the secret may have leaked)
 
 1. Generate a new key in a throwaway `GNUPGHOME` (`gpg --quick-gen-key "<new uid>" rsa4096 sign never`, no passphrase). Keep the new revocation certificate from `$GNUPGHOME/openpgp-revocs.d/`.
-2. Upload it: `gpg --armor --export-secret-keys "<new uid>" | gh secret set RPM_GPG_PRIVATE_KEY`, then `printf '%s' "<new uid>" | gh secret set RPM_GPG_NAME`. Delete the throwaway `GNUPGHOME`.
+2. Upload it: `gpg --armor --export-secret-keys "<new uid>" | gh secret set RPM_GPG_PRIVATE_KEY --env release`, then `printf '%s' "<new uid>" | gh secret set RPM_GPG_NAME --env release`. Back up the armored private key offline, then delete the throwaway `GNUPGHOME`.
 3. Run `build.yml` with `workflow_dispatch`. Publishing re-signs the retained RPMs and `repomd.xml` and replaces `RPM-GPG-KEY`.
 4. Update the fingerprint in this file.
 5. On the desktop, re-import the key (below).

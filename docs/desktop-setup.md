@@ -23,7 +23,7 @@ sudo rpm --import https://bryan-rose.github.io/fedora-claude-repo/RPM-GPG-KEY
 curl -fsSL https://bryan-rose.github.io/fedora-claude-repo/RPM-GPG-KEY | gpg --show-keys
 ```
 
-The fingerprint must be `7383AC1F9C19B3D4F33791D407E09944D89204D2` (see `docs/signing.md`), and it must be the **only** key listed.
+The fingerprint must be `5DAB838BDB269D9E0A1F5F63BB2FAD090BCEB63D` (see `docs/signing.md`), and it must be the **only** key listed.
 
 ## 3. Install
 

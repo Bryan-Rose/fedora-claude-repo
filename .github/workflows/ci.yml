@@ -1,0 +1,27 @@
+name: ci
+
+# No secrets, read-only token. Never pull_request_target (design D12).
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    container: registry.fedoraproject.org/fedora:44
+    timeout-minutes: 15
+    steps:
+      - name: Install tools
+        run: dnf -y -q install git make ShellCheck golang
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: make check

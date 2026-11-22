@@ -8,6 +8,11 @@ on:
 
 permissions: {}
 
+# Containers default to sh; every script here assumes bash.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   watch:
     runs-on: ubuntu-latest

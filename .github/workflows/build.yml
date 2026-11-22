@@ -13,6 +13,11 @@ on:
 
 permissions: {}
 
+# Containers default to sh; every script here assumes bash.
+defaults:
+  run:
+    shell: bash
+
 concurrency:
   group: build
   cancel-in-progress: false

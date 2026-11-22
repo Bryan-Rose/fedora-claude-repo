@@ -9,4 +9,4 @@ Self-built, GPG-signed Claude Desktop RPMs for Fedora, published as a dnf reposi
 
 ## Status
 
-In progress. The design and task list are in [`openspec/changes/add-rpm-pipeline/`](openspec/changes/add-rpm-pipeline/).
+The build, publish and upstream-watch pipeline is running. Its requirements are in [`openspec/specs/`](openspec/specs/); the original design and task list are archived in [`openspec/changes/archive/2026-11-22-add-rpm-pipeline/`](openspec/changes/archive/2026-11-22-add-rpm-pipeline/). Open work is tracked in [issues](https://github.com/Bryan-Rose/fedora-claude-repo/issues).

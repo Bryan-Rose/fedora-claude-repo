@@ -42,4 +42,4 @@
 ## 7. Integration checks
 
 - [x] 7.1 Run `build.yml` manually twice with no upstream change. Verify the first run publishes and the second exits early without pushing.
-- [ ] 7.2 Bump `upstream.env` to a newer upstream tag with the same `.deb` version. Verify a rebuild publishes and `sudo dnf upgrade` on the desktop picks it up.
+- [ ] 7.2 Bump `upstream.env` to a newer upstream tag with the same `.deb` version. Verify a rebuild publishes and `sudo dnf upgrade` on the desktop picks it up. _Moved to #6; not done in this change._

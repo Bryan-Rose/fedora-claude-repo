@@ -11,7 +11,7 @@ Builds Claude Desktop RPMs for Fedora from Anthropic's official `.deb`, signs th
 
 - **Never add `pull_request_target`** (design D12). PR-triggered jobs get no secrets except the review workflow's API key.
 - **Only the `publish` job gets the signing key**, through the main-only `release` environment, and it runs no upstream code (D11). Never add the signing secrets at repo level or to another job. See `docs/signing.md`.
-- **Actions:** only GitHub-owned actions plus `anthropics/claude-code-action` and agent-kit's review workflow are allowed, all pinned by full commit SHA with a version comment.
+- **Actions:** only GitHub-owned actions plus `anthropics/claude-code-action` (and the `oven-sh/setup-bun` it calls) and agent-kit's review workflow are allowed, all pinned by full commit SHA with a version comment.
 - **Pin bumps** of the upstream tooling (`upstream.env`) follow `docs/pin-bump.md` and are reviewed by hand.
 - **Never open PRs or issues on `aaddrick/claude-desktop-debian`.** Solve gaps here.
 - **Bot-owned issues** (labels `build-failure`, `deps-drift`, `upstream-review`) are opened, updated and closed by `ci/issue.sh`. Don't edit or close them by hand.

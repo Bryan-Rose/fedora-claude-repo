@@ -127,10 +127,13 @@ jobs:
     container: registry.fedoraproject.org/fedora:44
     permissions:
       contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
     steps:
       - name: Install tools
         run: |
-          dnf -y -q install git rpm-sign createrepo_c gnupg2 findutils
+          dnf -y -q install git gh rpm-sign createrepo_c gnupg2 findutils
           git config --global --add safe.directory '*'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -149,7 +152,7 @@ jobs:
           RPM_GPG_PRIVATE_KEY: ${{ secrets.RPM_GPG_PRIVATE_KEY }}
           RPM_GPG_NAME: ${{ secrets.RPM_GPG_NAME }}
           KEY: ${{ needs.discover.outputs.key }}
-        run: repo/ci/publish.sh site dist "$KEY"
+        run: repo/ci/publish.sh site dist pool "$KEY"
       - name: Push gh-pages (single commit)
         env:
           KEY: ${{ needs.discover.outputs.key }}
@@ -161,6 +164,11 @@ jobs:
           git commit -q -m "claude-desktop $KEY"
           git push -q origin HEAD:gh-pages
           echo "Published $KEY" >> "$GITHUB_STEP_SUMMARY"
+      - name: Prune release assets the live metadata no longer lists
+        run: |
+          gh release view packages --json assets --jq '.assets[].name' | while read -r a; do
+            [ -e "pool/$a" ] || gh release delete-asset packages "$a" --yes
+          done
 
   report:
     needs: [discover, build, test, publish]

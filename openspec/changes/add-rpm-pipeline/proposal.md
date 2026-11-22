@@ -10,7 +10,7 @@ Anthropic ships Claude Desktop for Linux only as a `.deb`, so there is no suppor
 - Build the RPM with the community `aaddrick/claude-desktop-debian` tooling at a commit we have reviewed (the pin), feeding it the verified `.deb` (`--deb`) and the pinned upstream tag (`--release-tag`). That way a bump of the pin alone also gives dnf an upgrade.
 - Add a companion `claude-desktop-fedora` noarch package that declares the runtime dependencies (Required and Recommended, including Cowork's) that the upstream RPM leaves out. The user installs this package.
 - Install-test each build on Fedora 44 and Fedora 45 before publishing.
-- Publish a signed dnf repository on GitHub Pages (`gh-pages`), using a dedicated signing key used only for this repository.
+- Publish a signed dnf repository: metadata on GitHub Pages (`gh-pages`), RPMs as GitHub release assets (git rejects files over 100 MB), using a dedicated signing key used only for this repository.
 - Add a daily watcher that opens one rolling issue when upstream changes code that affects the build after our pin, so the user can review it and bump the pin.
 - Open an issue on any failure, and when the `.deb`'s declared dependencies change. Never publish a partial or failed build.
 - Document the one-time setup: signing key and secrets, and the desktop's repo file.
@@ -29,7 +29,7 @@ None. There are no existing specs.
 ## Impact
 
 - New: `.github/workflows/` (build and watcher workflows), the companion package spec, the pinned Anthropic APT key file, the recorded `.deb` dependency fields, and setup docs.
-- GitHub: the `gh-pages` branch content, Actions secrets `RPM_GPG_PRIVATE_KEY` and `RPM_GPG_NAME`, and issues opened by the workflows.
+- GitHub: the `gh-pages` branch content, the `packages` release, Actions secrets `RPM_GPG_PRIVATE_KEY` and `RPM_GPG_NAME`, and issues opened by the workflows.
 - Desktop: `/etc/yum.repos.d/claude-desktop.repo`, the imported public key, and the `claude-desktop-fedora` and `claude-desktop-unofficial` packages. No Node.js.
 - External, read-only: Anthropic's APT repo (`downloads.claude.ai`) and `aaddrick/claude-desktop-debian`. We never send changes upstream.
 - Out of scope: arm64, COPR, Flatpak/AppImage, and editing upstream code (other than the reviewed patch skip list, design D13).

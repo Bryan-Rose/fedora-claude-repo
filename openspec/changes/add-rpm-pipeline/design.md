@@ -48,7 +48,7 @@ A noarch spec in this repo (`packaging/claude-desktop-fedora.spec`). It requires
 A dedicated RSA-4096 signing key, with no passphrase, generated on the desktop and stored only in Actions secrets `RPM_GPG_PRIVATE_KEY` and `RPM_GPG_NAME`, then deleted locally. Without a passphrase, no loopback-pinentry setup is needed in CI; anyone who could read one secret could read a passphrase secret too. `rpmsign --addsign` uses `%_gpg_name`. `repomd.xml` is detach-signed with `--armor`. The key is exported as `gpg --armor --export "$RPM_GPG_NAME"`.
 
 ### D8. Two workflows
-- `build.yml`: daily cron plus `workflow_dispatch` (with a `force` input that bypasses the skip check, for key rotation and edits that don't change the build key, such as the companion spec or skip list). Stages run in order: discover → skip check → fetch → build → test matrix → publish. Publishing does retention (three newest per package name), `createrepo_c --update`, signing `repomd.xml`, and writing `LAST_VERSION`, all in one gh-pages commit.
+- `build.yml`: daily cron plus `workflow_dispatch` (with a `force` input that bypasses the skip check, for key rotation and edits that don't change the build key, such as the companion spec or skip list). Stages run in order: discover → skip check → fetch → build → test matrix → publish. Publishing does retention (three newest per package name), uploads RPMs to the `packages` release (D14), regenerates and signs the metadata, and writes `LAST_VERSION` in one gh-pages commit.
 - `upstream-watch.yml`: daily cron plus `workflow_dispatch`. It does a treeless clone of upstream and runs `git diff --quiet -I'^OFFICIAL_DEB_' "$UPSTREAM_REF" origin/main -- build.sh scripts/ ':!*.md'`. It then creates, updates, or closes the single labelled issue with `gh`.
 
 Both workflows read the pin from one place (`upstream.env` in the repo) so a bump is a one-file commit.
@@ -83,6 +83,19 @@ A compromised build input can then produce a bad unsigned RPM, but cannot read t
 - First use (2026-11-21): `patch_tray_icon_env_override` fails on `.deb` 6.28899.2; upstream's own CI is red on the same commit. It only makes `CLAUDE_TRAY_USE_DARK_ICON` work (Cinnamon dark panels); on KDE the result is Anthropic's default tray-icon selection.
 - *Rejected: wait for upstream.* No package for an unknown number of days.
 - *Rejected: pin an older tag and build its `.deb`.* That contradicts D1.
+
+### D14. RPMs as release assets, metadata on Pages
+GitHub rejects git files over 100 MB, and the main RPM is about 200 MB. The signed RPMs are therefore assets of one rolling GitHub release, `packages` (2 GB per-file limit). gh-pages holds only `rpm/repodata/` (with the signed `repomd.xml`), `RPM-GPG-KEY` and `LAST_VERSION`. `createrepo_c --baseurl https://github.com/<repo>/releases/download/packages/` writes `xml:base` into each package location, so dnf fetches packages from the release while the repo file still points at Pages. dnf5 follows `xml:base` (checked in fedora:44).
+
+Publish order keeps the live metadata valid:
+1. Download the current assets, add and sign the new RPMs, apply retention.
+2. Upload only new or changed files.
+3. Push the metadata.
+4. Delete assets the new metadata no longer lists.
+
+The companion keeps the same file name across builds. When it is re-uploaded, the old metadata points at the new file for a few seconds; dnf fails that download and succeeds on retry.
+- *Rejected: deploy Pages from an artifact.* It needs extra `pages`/`id-token` permissions, re-downloads every RPM on each publish, and keeps no git history.
+- *Rejected: Git LFS.* Pages doesn't serve LFS objects.
 
 ## Risks / Trade-offs
 

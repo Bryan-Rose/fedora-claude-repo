@@ -35,14 +35,14 @@ The repository SHALL keep the three newest RPMs of each package name and remove 
 - **THEN** the oldest `claude-desktop-unofficial` RPM is removed and the `claude-desktop-fedora` RPMs are unaffected
 
 ### Requirement: GitHub Pages layout
-The repository SHALL be served from the `gh-pages` branch at `https://bryan-rose.github.io/fedora-claude-repo/`, with packages and metadata under `rpm/` and the public key at `RPM-GPG-KEY`.
+The repository metadata SHALL be served from the `gh-pages` branch at `https://bryan-rose.github.io/fedora-claude-repo/`, under `rpm/`, with the public key at `RPM-GPG-KEY`. The RPMs SHALL be assets of the GitHub release `packages`, and the metadata SHALL reference them through `xml:base`.
 
 #### Scenario: Client configuration
 - **WHEN** the desktop's repo file sets `baseurl` to `<pages-url>/rpm` and `gpgkey` to `<pages-url>/RPM-GPG-KEY` with `gpgcheck=1` and `repo_gpgcheck=1`
 - **THEN** `sudo dnf install claude-desktop-fedora` succeeds
 
 ### Requirement: Atomic publish
-A publish SHALL update packages, metadata, metadata signature, and the recorded build pair together in a single commit to `gh-pages`. It SHALL NOT leave a state where the metadata and its signature disagree.
+A publish SHALL update the metadata, its signature, and the recorded build pair together in a single commit to `gh-pages`. New RPMs SHALL be uploaded before that commit is pushed, and RPMs dropped by retention SHALL be deleted only after it. A publish SHALL NOT leave a state where the metadata and its signature disagree.
 
 #### Scenario: Push failure
 - **WHEN** pushing to `gh-pages` fails

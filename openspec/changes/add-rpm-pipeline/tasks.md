@@ -30,7 +30,7 @@
 
 ## 5. Upstream watch workflow
 
-- [ ] 5.1 Add `.github/workflows/upstream-watch.yml` running `git diff -I'^OFFICIAL_DEB_'` from `UPSTREAM_REF` to upstream `main` over `build.sh` and `scripts/`, excluding Markdown, and maintaining one `upstream-review` issue (matched by label and bot author) with a compare link, using `permissions: {contents: read, issues: write}` and no secrets. Verify that a run with an old pin opens the issue and a run with the pin at `main` closes it.
+- [x] 5.1 Add `.github/workflows/upstream-watch.yml` running `git diff -I'^OFFICIAL_DEB_'` from `UPSTREAM_REF` to upstream `main` over `build.sh` and `scripts/`, excluding Markdown, and maintaining one `upstream-review` issue (matched by label and bot author) with a compare link, using `permissions: {contents: read, issues: write}` and no secrets. Verify that a run with an old pin opens the issue and a run with the pin at `main` closes it.
 - [x] 5.2 Check the filter against upstream's recent "Update Claude Desktop to version …" commits. Verify that a diff spanning only such commits reports no change.
 - [x] 5.3 Document the review-and-bump procedure in `docs/pin-bump.md`. Verify it covers reading the compare link, updating `upstream.env`, reviewing and clearing `UPSTREAM_SKIP_PATCHES`, and the rebuild that follows.
 

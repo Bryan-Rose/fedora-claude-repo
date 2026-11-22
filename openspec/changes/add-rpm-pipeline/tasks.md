@@ -21,12 +21,12 @@
 ## 4. Build workflow
 
 - [x] 4.0 Lay out `build.yml` jobs per design D11/D12: top-level `permissions: {}`, `schedule` + `workflow_dispatch` triggers only, GitHub-owned actions pinned by SHA, signing secrets referenced only in the `publish` job. Verify `grep -n 'secrets\.' .github/workflows/build.yml` hits only the publish job and the workflow has no `pull_request*` trigger.
-- [ ] 4.1 Add `.github/workflows/build.yml` with the discovery stage: verify InRelease, check the Packages hash, and select the highest version. Verify that a `workflow_dispatch` run logs the same version as the top `sort -V` entry.
-- [ ] 4.2 Add the skip check against `LAST_VERSION` (`<deb version>+<UPSTREAM_REF>`). Verify by temporarily writing the expected key to gh-pages and confirming the run exits early.
-- [ ] 4.3 Add the fetch and build stages: check the `.deb` hash, check that the tag matches the SHA, apply `UPSTREAM_SKIP_PATCHES` (design D13; fail on an unknown name), run `build.sh --build rpm --clean yes --deb <file> --release-tag $UPSTREAM_TAG`, build the companion package, and run the dependency-drift diff. Verify that the run's artifacts contain both RPMs and that `rpm -qp --qf '%{VERSION}-%{RELEASE}'` shows the deb version and wrapper release.
-- [ ] 4.4 Add an install-test matrix (`fedora:44`, `fedora:45`) running `dnf install ./*.rpm` and `rpm -V`. Verify both jobs pass, and that a deliberately wrong dependency name makes them fail.
-- [ ] 4.5 Add the publish stage, gated on the tests: sign the RPMs, keep the three newest per package name, upload new RPMs to the `packages` release, run `createrepo_c --baseurl` (design D14), write the armored `repomd.xml.asc`, export `RPM-GPG-KEY` by name, write `LAST_VERSION`, push one gh-pages commit, then prune release assets the metadata no longer lists. Verify `rpm -K` on the published RPMs, `gpg --verify` on `repomd.xml.asc`, and that `RPM-GPG-KEY` contains exactly one key.
-- [ ] 4.6 Add failure and drift reporting: one rolling issue per label (`build-failure`, `deps-drift`), matched by label and author `github-actions[bot]`, with the stage and a run link. Verify by forcing a failure, for example with a bad `.deb` hash: an issue opens, gh-pages is unchanged, and a second failure updates the same issue.
+- [x] 4.1 Add `.github/workflows/build.yml` with the discovery stage: verify InRelease, check the Packages hash, and select the highest version. Verify that a `workflow_dispatch` run logs the same version as the top `sort -V` entry.
+- [x] 4.2 Add the skip check against `LAST_VERSION` (`<deb version>+<UPSTREAM_REF>`). Verify by temporarily writing the expected key to gh-pages and confirming the run exits early.
+- [x] 4.3 Add the fetch and build stages: check the `.deb` hash, check that the tag matches the SHA, apply `UPSTREAM_SKIP_PATCHES` (design D13; fail on an unknown name), run `build.sh --build rpm --clean yes --deb <file> --release-tag $UPSTREAM_TAG`, build the companion package, and run the dependency-drift diff. Verify that the run's artifacts contain both RPMs and that `rpm -qp --qf '%{VERSION}-%{RELEASE}'` shows the deb version and wrapper release.
+- [x] 4.4 Add an install-test matrix (`fedora:44`, `fedora:45`) running `dnf install ./*.rpm` and `rpm -V`. Verify both jobs pass, and that a deliberately wrong dependency name makes them fail.
+- [x] 4.5 Add the publish stage, gated on the tests: sign the RPMs, keep the three newest per package name, upload new RPMs to the `packages` release, run `createrepo_c --baseurl` (design D14), write the armored `repomd.xml.asc`, export `RPM-GPG-KEY` by name, write `LAST_VERSION`, push one gh-pages commit, then prune release assets the metadata no longer lists. Verify `rpm -K` on the published RPMs, `gpg --verify` on `repomd.xml.asc`, and that `RPM-GPG-KEY` contains exactly one key.
+- [x] 4.6 Add failure and drift reporting: one rolling issue per label (`build-failure`, `deps-drift`), matched by label and author `github-actions[bot]`, with the stage and a run link. Verify by forcing a failure, for example with a bad `.deb` hash: an issue opens, gh-pages is unchanged, and a second failure updates the same issue.
 
 ## 5. Upstream watch workflow
 
@@ -41,5 +41,5 @@
 
 ## 7. Integration checks
 
-- [ ] 7.1 Run `build.yml` manually twice with no upstream change. Verify the first run publishes and the second exits early without pushing.
+- [x] 7.1 Run `build.yml` manually twice with no upstream change. Verify the first run publishes and the second exits early without pushing.
 - [ ] 7.2 Bump `upstream.env` to a newer upstream tag with the same `.deb` version. Verify a rebuild publishes and `sudo dnf upgrade` on the desktop picks it up.

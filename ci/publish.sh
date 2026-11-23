@@ -29,7 +29,10 @@ if ! gh release view "$tag" >/dev/null 2>&1; then
 		--notes "Signed RPMs served to dnf via https://bryan-rose.github.io/fedora-claude-repo/. Unofficial build of Claude Desktop, not affiliated with or endorsed by Anthropic. Install via the dnf repository, not from here; see README."
 fi
 mkdir -p "$pool"; pool=$(realpath "$pool")
-if [ "$(gh release view "$tag" --json assets --jq '[.assets[].name | select(endswith(".rpm"))] | length')" -gt 0 ]; then
+# Plain assignment so a failed API call stops the script instead of reading as "no assets",
+# which would drop every retained build from the metadata and the prune step.
+n=$(gh release view "$tag" --json assets --jq '[.assets[].name | select(endswith(".rpm"))] | length')
+if (( n > 0 )); then
 	gh release download "$tag" --pattern '*.rpm' --dir "$pool" --clobber
 fi
 before=$(mktemp)

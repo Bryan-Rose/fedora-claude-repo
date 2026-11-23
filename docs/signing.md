@@ -33,6 +33,7 @@ Only the workflow's `publish` job reads these secrets (design D11). It runs in t
 ## Re-importing on the desktop
 
 ```bash
+curl -fsSL https://bryan-rose.github.io/fedora-claude-repo/RPM-GPG-KEY | gpg --show-keys   # must list only the fingerprint above
 sudo rpm --import https://bryan-rose.github.io/fedora-claude-repo/RPM-GPG-KEY
 sudo dnf clean metadata && sudo dnf makecache
 ```

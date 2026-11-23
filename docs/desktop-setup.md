@@ -16,7 +16,7 @@ gpgkey=https://bryan-rose.github.io/fedora-claude-repo/RPM-GPG-KEY
 EOF
 ```
 
-## 2. Import and check the signing key
+## 2. Check and import the signing key
 
 Download the key once, then check that same file before rpm trusts it:
 

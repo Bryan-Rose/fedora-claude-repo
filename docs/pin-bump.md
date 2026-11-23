@@ -19,14 +19,13 @@ The `upstream-watch` workflow keeps one open **upstream-review** issue whenever 
 ```bash
 UPSTREAM_TAG=<new tag>
 UPSTREAM_REF=<commit the tag points to>   # the line ending in ^{} from: git ls-remote <repo> "refs/tags/<tag>^{}"
+UPSTREAM_NPM_BEFORE=<review date, YYYY-MM-DD>   # npm only resolves versions published before it
 ```
 
 Then review `UPSTREAM_SKIP_PATCHES`:
 - If the bump brings a fix for a skipped patch, **remove it from the list**. An entry stays only while that patch still fails against the current `.deb`.
 - If a newly broken, non-essential patch blocks the build, you may add it, with a comment giving the reason and the clear-when condition (design D13).
 - The build fails if a listed name is no longer in `active_patches`, so stale entries surface on their own.
-
-In `ci/build.sh`, move `npm_config_before` to the review date. npm then resolves asar's dependencies only from versions published before your review.
 
 Update `docs/upstream-audit.md` with the new tag/SHA and anything notable from the review.
 

@@ -25,16 +25,18 @@ echo "$want  Packages" | sha256sum -c --quiet - \
 version=$(awk '/^Package:/{p=$2} /^Version:/ && p=="claude-desktop"{print $2}' Packages | sort -V | tail -n1)
 [[ -n $version ]] || { echo 'No claude-desktop entry in Packages' >&2; exit 1; }
 
-# Pick the stanza for that exact version.
+# Pick the stanza for that exact version: compare strings, since a version
+# like 6.3+1 is not a safe regex. No match leaves read empty, caught below.
 read -r filename sha256 < <(awk -v RS= -v v="$version" '
-	$0 ~ "(^|\n)Package: claude-desktop\n" && $0 ~ "\nVersion: " v "\n" {
-		n = split($0, l, "\n")
+	$0 ~ "(^|\n)Package: claude-desktop\n" {
+		n = split($0, l, "\n"); m = 0; f = s = ""
 		for (i = 1; i <= n; i++) {
+			if (l[i] == "Version: " v) m = 1
 			if (l[i] ~ /^Filename: /) f = substr(l[i], 11)
 			if (l[i] ~ /^SHA256: /)   s = substr(l[i], 9)
 		}
-		print f, s; exit
-	}' Packages)
+		if (m) { print f, s; exit }
+	}' Packages) || true
 [[ $filename == pool/* && $sha256 =~ ^[0-9a-f]{64}$ ]] \
 	|| { echo "Bad Packages stanza for $version" >&2; exit 1; }
 

@@ -26,6 +26,8 @@ Then review `UPSTREAM_SKIP_PATCHES`:
 - If a newly broken, non-essential patch blocks the build, you may add it, with a comment giving the reason and the clear-when condition (design D13).
 - The build fails if a listed name is no longer in `active_patches`, so stale entries surface on their own.
 
+In `ci/build.sh`, move `npm_config_before` to the review date. npm then resolves asar's dependencies only from versions published before your review.
+
 Update `docs/upstream-audit.md` with the new tag/SHA and anything notable from the review.
 
 ## 3. Commit and rebuild

@@ -41,6 +41,8 @@ sudo dnf install claude-desktop-fedora
 
 This pulls in `claude-desktop-unofficial` plus its runtime dependencies, including Cowork's recommended packages (bubblewrap, qemu-system-x86, edk2-ovmf, virtiofsd). Updates then arrive through `sudo dnf upgrade`.
 
+It also keeps Chromium's sandbox on under Wayland (the launcher turns it off by default). Log out and back in once after installing so your session picks this up. To turn the sandbox off again, put `CLAUDE_FORCE_SANDBOX=0` in `~/.config/environment.d/60-claude-sandbox.conf`.
+
 ## 4. Check
 
 ```bash

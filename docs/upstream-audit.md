@@ -35,6 +35,7 @@
   - logs and backups of `~/.config/Claude` JSON stores (five rotated copies) to `~/.cache/claude-desktop-debian/`;
   - a qemu shim under that cache directory, and a temporary fifo under `$TMPDIR`.
   It also repairs autostart and file-manager `.desktop` entries and the portal app-id entry in the user's directories, and kills stale or orphaned Claude helper and Cowork-daemon processes.
+- **Chromium sandbox:** on Wayland the launcher passes `--no-sandbox` to `deb`/`rpm` builds (`launcher-common.sh:438-452`) for an Ubuntu AppArmor issue Fedora doesn't have. Our companion package sets `CLAUDE_FORCE_SANDBOX=1` through `/usr/lib/environment.d/60-claude-desktop-fedora.conf` so the sandbox stays on, without patching upstream (D13). Checked on Fedora 44 KDE Wayland with the variable set from a terminal: no `--no-sandbox`, and renderers run in their own network namespace.
 - **Doctor** (`--doctor`): one optional `curl` to Anthropic's APT `Packages` index to check for version drift.
 - **Cowork fallback daemon** (`cowork-vm-service.js`): a Unix-socket server that spawns bwrap/qemu/virtiofsd. It does nothing unless launched with `COWORK_VM_BACKEND=bwrap`.
 

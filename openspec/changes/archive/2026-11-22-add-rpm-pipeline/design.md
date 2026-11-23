@@ -73,13 +73,13 @@ A compromised build input can then produce a bad unsigned RPM, but cannot read t
 - *Rejected: a single job (the handoff draft).* Every build step could read the signing key.
 
 ### D12. Repository hardening
-- Workflows trigger only on `schedule` and `workflow_dispatch`. **Never add `pull_request_target`** (or `pull_request` jobs with secrets); fork PRs must not run anything privileged.
+- Workflows trigger only on `schedule` and `workflow_dispatch` (exceptions: see the 2026-11-22 amendment below). **Never add `pull_request_target`** (or `pull_request` jobs with secrets); fork PRs must not run anything privileged.
 - Only GitHub-owned actions are allowed, pinned by full commit SHA (enforced in repo settings since 2026-11-21).
 - Rolling-issue lookup matches label **and** author `github-actions[bot]`, so an issue a stranger opens can't take the place of ours.
 - Wiki and Projects are disabled; the repo description and README carry an "unofficial, not affiliated with Anthropic" disclaimer. The packages are publicly installable by design.
-- *Amendment (2026-11-22, agent-kit onboarding, #14 and #15).* Two workflows now also run on `pull_request`, and the Actions policy allows three non-GitHub actions:
+- *Amendment (2026-11-22, agent-kit onboarding, #14 and #15).* Two workflows now also run on `pull_request`, and the Actions policy allows three non-GitHub actions or workflows:
   - `ci.yml` runs `check` on `pull_request` and on push to `main`. It gets no secrets and a `contents: read` token, so a fork PR runs nothing privileged.
-  - `claude-review.yml` runs on `pull_request` and passes only the reviewer credential (`ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN`), never `secrets: inherit`. Its token has `contents: read`, `pull-requests: write`, `issues: read`. The reusable workflow skips fork and Dependabot PRs, which GitHub runs without repo secrets anyway, so only branches pushed by people with write access ever reach the credential. The credential can spend API budget but cannot sign packages or push to `main` or `gh-pages`; the signing key stays in the `release` environment (D11).
+  - `claude-review.yml` runs on `pull_request` and passes only the reviewer credential (`ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN`), never `secrets: inherit`. Its token has `contents: read`, `pull-requests: write`, `issues: read`. The reusable workflow skips fork and Dependabot PRs, which GitHub runs without repo secrets anyway, Its `workflow_dispatch` path (review any PR into the run summary) passes the same credential, but the reusable workflow refuses a cross-repository PR there before checking anything out. So only branches pushed by people with write access ever reach the credential. The credential can spend API budget but cannot sign packages or push to `main` or `gh-pages`; the signing key stays in the `release` environment (D11).
   - The policy also allows `anthropics/claude-code-action`, `oven-sh/setup-bun` (called inside it) and `Bryan-Rose/agent-kit`'s review workflow. Full-SHA pinning is still required for every action.
   - `pull_request_target` remains forbidden.
 

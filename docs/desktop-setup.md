@@ -18,17 +18,19 @@ EOF
 
 ## 2. Check and import the signing key
 
-Download the key once, then check that same file before rpm trusts it:
+Download the key once into a private directory, then check that same file before rpm trusts it:
 
 ```bash
-curl -fsSLo /tmp/RPM-GPG-KEY https://bryan-rose.github.io/fedora-claude-repo/RPM-GPG-KEY
-gpg --show-keys /tmp/RPM-GPG-KEY
+d=$(mktemp -d)
+curl -fsSLo "$d/RPM-GPG-KEY" https://bryan-rose.github.io/fedora-claude-repo/RPM-GPG-KEY
+gpg --show-keys "$d/RPM-GPG-KEY"
 ```
 
-The fingerprint must be `5DAB838BDB269D9E0A1F5F63BB2FAD090BCEB63D` (see `docs/signing.md`), and it must be the **only** key listed. If either check fails, stop. Only then import it:
+The fingerprint must be `5DAB838BDB269D9E0A1F5F63BB2FAD090BCEB63D` (see `docs/signing.md`), and it must be the **only** key listed. If either check fails, stop. Only then import it, in the same shell:
 
 ```bash
-sudo rpm --import /tmp/RPM-GPG-KEY
+sudo rpm --import "$d/RPM-GPG-KEY"
+rm -rf "$d"
 ```
 
 ## 3. Install

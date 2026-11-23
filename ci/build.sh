@@ -49,6 +49,8 @@ done
 echo "::endgroup::"
 
 echo "::group::build.sh"
+# Only npm versions published before the last review, and no install scripts (see docs/pin-bump.md).
+export npm_config_before=2026-11-21 npm_config_ignore_scripts=true
 ./build.sh --build rpm --clean yes --deb "$deb" --release-tag "$UPSTREAM_TAG"
 shopt -s nullglob
 rpms=(./claude-desktop-unofficial-*.rpm)
